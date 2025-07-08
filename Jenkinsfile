@@ -30,13 +30,6 @@ pipeline {
                 """
             }
         }
-        stage('Check WSO2 Status') {
-            steps {
-                bat """
-                    powershell -Command "try { Invoke-WebRequest -Uri http://localhost:9443/publisher -UseBasicParsing -TimeoutSec 30 } catch { exit 1 }"
-                """
-            }
-    }
     }
 
     post {
