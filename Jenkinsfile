@@ -2,15 +2,16 @@ pipeline {
     agent any
     
     options {
-        timeout(time: 15, unit: 'MINUTES')
+        timeout(time: 10, unit: 'MINUTES')
         retry(2)
     }
     
     environment {
+        // UPDATE THIS PATH TO YOUR WSO2 APIM INSTALLATION
         WSO2_HOME = 'C:\\Users\\DELL\\Downloads\\wso2am-4.1.0 (2)\\wso2am-4.1.0'
         CONFIG_PATH = "${WSO2_HOME}\\repository\\conf"
-        BIN_PATH = "${WSO2_HOME}\\bin"
         DEPLOYMENT_FILE = 'deployment.toml'
+        SERVER_IP = '192.168.1.100' // Your local PC IP - update this
     }
     
     stages {
@@ -24,6 +25,7 @@ pipeline {
                     if (!fileExists(DEPLOYMENT_FILE)) {
                         error "deployment.toml file not found in repository"
                     }
+                    echo "Found deployment.toml file"
                 }
             }
         }
@@ -44,6 +46,7 @@ pipeline {
                     }
                     
                     echo "Configuration validation passed"
+                    echo "Deploying to server IP: ${SERVER_IP}"
                 }
             }
         }
@@ -63,8 +66,9 @@ pipeline {
                     }
                     
                     // Check if api-manager.bat exists
-                    if (!fileExists("${BIN_PATH}\\api-manager.bat")) {
-                        error "api-manager.bat not found at ${BIN_PATH}"
+                    def apiManagerBat = "${WSO2_HOME}\\bin\\api-manager.bat"
+                    if (!fileExists(apiManagerBat)) {
+                        error "api-manager.bat not found at ${apiManagerBat}"
                     }
                     
                     echo "Pre-deployment checks passed"
@@ -72,43 +76,7 @@ pipeline {
             }
         }
         
-        stage('Stop Current WSO2 APIM') {
-            steps {
-                echo 'Stopping current WSO2 APIM instance if running...'
-                script {
-                    try {
-                        // Check if WSO2 APIM process is running
-                        def processCheck = bat(
-                            script: 'tasklist /FI "IMAGENAME eq java.exe" | find "java.exe"',
-                            returnStatus: true
-                        )
-                        
-                        if (processCheck == 0) {
-                            echo 'WSO2 APIM process found. Stopping...'
-                            
-                            // Kill WSO2 APIM related Java processes
-                            bat '''
-                                for /f "tokens=2" %%i in ('tasklist /FI "IMAGENAME eq java.exe" /FO CSV ^| find "wso2"') do (
-                                    echo Stopping WSO2 APIM process %%i
-                                    taskkill /PID %%i /F
-                                )
-                            '''
-                            
-                            // Wait for process to terminate
-                            sleep(time: 10, unit: 'SECONDS')
-                            echo 'WSO2 APIM processes stopped'
-                        } else {
-                            echo 'No WSO2 APIM process found running'
-                        }
-                    } catch (Exception e) {
-                        echo "Error stopping WSO2 APIM: ${e.getMessage()}"
-                        echo "Continuing with deployment..."
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy') {
+        stage('Deploy Configuration') {
             steps {
                 echo 'Deploying WSO2 APIM configuration...'
                 script {
@@ -118,7 +86,7 @@ pipeline {
                             cd /d "${workspace}"
                             call scripts\\deploy.bat
                         """
-                        echo 'Deployment completed successfully'
+                        echo 'Configuration deployment completed successfully'
                     } catch (Exception e) {
                         echo "Deployment failed: ${e.getMessage()}"
                         throw e
@@ -127,43 +95,20 @@ pipeline {
             }
         }
         
-        stage('Post-deployment Verification') {
+        stage('Post-deployment Instructions') {
             steps {
-                echo 'Verifying deployment...'
+                echo 'Deployment completed! Manual action required:'
+                echo '========================================='
+                echo '1. Open Command Prompt'
+                echo "2. Navigate to: ${WSO2_HOME}\\bin"
+                echo '3. Run: api-manager.bat'
+                echo '4. Wait for WSO2 APIM to start completely'
+                echo '5. Access WSO2 APIM at: https://localhost:9443/carbon'
+                echo '========================================='
+                
                 script {
-                    // Wait for service to start
-                    sleep(time: 30, unit: 'SECONDS')
-                    
-                    // Check if WSO2 APIM process is running
-                    def processStatus = bat(
-                        script: 'tasklist /FI "IMAGENAME eq java.exe" | find "java.exe"',
-                        returnStatus: true
-                    )
-                    
-                    if (processStatus == 0) {
-                        echo 'WSO2 APIM process is running'
-                        
-                        // Wait a bit more for full startup
-                        sleep(time: 30, unit: 'SECONDS')
-                        
-                        // Optional: Check if WSO2 APIM is responding
-                        try {
-                            def healthCheck = bat(
-                                script: 'curl -s --connect-timeout 10 https://localhost:9443/carbon/',
-                                returnStatus: true
-                            )
-                            
-                            if (healthCheck == 0) {
-                                echo 'WSO2 APIM is responding on port 9443'
-                            } else {
-                                echo 'WSO2 APIM process is running but may still be starting up'
-                            }
-                        } catch (Exception e) {
-                            echo 'Health check failed (curl might not be available): ' + e.getMessage()
-                        }
-                    } else {
-                        echo 'Warning: WSO2 APIM process not found'
-                    }
+                    echo "Server IP: ${SERVER_IP}"
+                    echo "Alternative access URL: https://${SERVER_IP}:9443/carbon"
                 }
             }
         }
@@ -177,15 +122,15 @@ pipeline {
         }
         
         success {
-            echo 'Deployment successful!'
-            echo 'WSO2 APIM is running in console mode'
-            echo 'Access the management console at: https://localhost:9443/carbon/'
+            echo '✅ Deployment successful!'
+            echo 'New deployment.toml has been applied to WSO2 APIM'
+            echo 'Please manually start WSO2 APIM using api-manager.bat'
         }
         
         failure {
-            echo 'Deployment failed!'
-            echo 'Check the WSO2 APIM logs for more details'
-            echo 'Log location: ${WSO2_HOME}\\repository\\logs'
+            echo '❌ Deployment failed!'
+            echo 'Check the logs above for error details'
+            echo 'Original deployment.toml has been restored from backup'
         }
     }
 }
