@@ -24,7 +24,7 @@ pipeline {
         stage('Restart WSO2 APIM') {
             steps {
                 bat """
-                    taskkill /F /IM java.exe || echo "No WSO2 process running"
+                    for /f "tokens=2 delims=," %%a in ('tasklist /v /fo csv ^| findstr /i "org.wso2.carbon.bootstrap.Bootstrap"') do taskkill /PID %%a /F
                     ping 127.0.0.1 -n 6 > nul
                     start "" "%APIM_HOME%\\bin\\api-manager.bat"
                 """
