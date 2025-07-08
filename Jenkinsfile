@@ -25,7 +25,7 @@ pipeline {
             steps {
                 bat """
                     taskkill /F /IM java.exe || echo "No WSO2 process running"
-                    timeout /t 5
+                    ping 127.0.0.1 -n 6 > nul
                     start "" "%APIM_HOME%\\bin\\api-manager.bat"
                 """
             }
