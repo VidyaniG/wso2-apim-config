@@ -1,31 +1,43 @@
 pipeline {
-  agent any
-  environment {
-    JENKINS_NODE_COOKIE = 'dontKillMe' // protects background job
-  }
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    agent any
+
+    environment {
+        APIM_HOME = "C:\\Users\\DELL\\Downloads\\wso2am-4.1.0(2)\\wso2am-4.1.0"
+        DEPLOYMENT_FILE_PATH = "${APIM_HOME}\\repository\\conf\\deployment.toml"
     }
-    stage('Validate') {
-      steps {
-        script {
-          if (!fileExists('deployment.toml')) error('Missing deployment.toml')
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/VidyaniG/wso2-apim-config.git'
+            }
         }
-      }
+
+        stage('Replace deployment.toml') {
+            steps {
+                bat """
+                    copy /Y deployment.toml "%DEPLOYMENT_FILE_PATH%"
+                """
+            }
+        }
+
+        stage('Restart WSO2 APIM') {
+            steps {
+                bat """
+                    taskkill /F /IM java.exe || echo "No WSO2 process running"
+                    timeout /t 5
+                    start "" "%APIM_HOME%\\bin\\api-manager.bat"
+                """
+            }
+        }
     }
-    stage('Deploy') {
-      steps {
-        bat """
-          call scripts\\deploy.bat
-        """
-      }
+
+    post {
+        success {
+            echo 'WSO2 APIM restarted with new deployment.toml'
+        }
+        failure {
+            echo 'Deployment failed. Check logs.'
+        }
     }
-  }
-  post {
-    always {
-      echo 'Cleaning workspace'
-      cleanWs()
-    }
-  }
 }
