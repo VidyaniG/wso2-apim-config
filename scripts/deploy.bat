@@ -1,7 +1,7 @@
 @echo off
 echo === Deploying deployment.toml ===
 
-set WSO2_HOME=C:\path\to\wso2am-4.1.0
+set WSO2_HOME=C:\Users\DELL\Downloads\wso2am-4.1.0(2)\wso2am-4.1.0
 set CONFIG_PATH=%WSO2_HOME%\repository\conf
 
 echo Stopping running APIM (if any)...
