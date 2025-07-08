@@ -11,7 +11,7 @@ pipeline {
         WSO2_HOME = 'C:\\Users\\DELL\\Downloads\\wso2am-4.1.0 (2)\\wso2am-4.1.0'
         CONFIG_PATH = "${WSO2_HOME}\\repository\\conf"
         DEPLOYMENT_FILE = 'deployment.toml'
-        SERVER_IP = '192.168.1.100' // Your local PC IP - update this
+        SERVER_IP = '192.168.56.1' // Your local PC IP - update this
     }
     
     stages {
