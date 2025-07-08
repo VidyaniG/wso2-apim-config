@@ -7,7 +7,7 @@ pipeline {
     }
     
     environment {
-        WSO2_HOME = 'C:\Users\DELL\Downloads\wso2am-4.1.0 (2)\wso2am-4.1.0'
+        WSO2_HOME = 'C:\\Users\DELL\Downloads\wso2am-4.1.0 (2)\wso2am-4.1.0'
         CONFIG_PATH = "${WSO2_HOME}\\repository\\conf"
         DEPLOYMENT_FILE = 'deployment.toml'
     }
