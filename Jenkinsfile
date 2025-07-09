@@ -30,6 +30,26 @@ pipeline {
                 """
             }
         }
+        stage('Check WSO2 Status') {
+                steps {
+                    bat '''
+                        powershell -Command "try {
+                            $response = Invoke-WebRequest -Uri http://localhost:9443/publisher -UseBasicParsing -TimeoutSec 30
+                            if ($response.StatusCode -eq 200) {
+                                Write-Host 'WSO2 APIM is up'
+                                exit 0
+                            } else {
+                                Write-Host 'WSO2 APIM returned unexpected status'
+                                exit 1
+                            }
+                        } catch {
+                            Write-Host 'Failed to connect to WSO2 APIM'
+                            exit 1
+                        }"
+                    '''
+                }
+            }
+
 
     }
 
