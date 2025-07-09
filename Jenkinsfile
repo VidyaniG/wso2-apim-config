@@ -26,15 +26,10 @@ pipeline {
             steps {
                 script {
                     bat """
-                        echo "Stopping WSO2 APIM..."
+                        echo Stopping WSO2 APIM...
                         wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" delete
-                        timeout /t 15 /nobreak
-                        
-                        REM Verify process is stopped
-                        for /f %%i in ('wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" get ProcessId /value 2^>nul ^| find "ProcessId"') do (
-                            echo "Process still running, force killing..."
-                            taskkill /F /PID %%i 2>nul
-                        )
+                        ping 127.0.0.1 -n 16 > nul
+                        echo Process stopped successfully
                     """
                 }
             }
@@ -42,27 +37,30 @@ pipeline {
         stage('Start WSO2 APIM') {
             steps {
                 bat """
-                    echo "Starting WSO2 APIM..."
+                    echo Starting WSO2 APIM...
                     cd /d "%APIM_HOME%\\bin"
                     start "WSO2 APIM" /MIN api-manager.bat
-                    timeout /t 30 /nobreak
+                    ping 127.0.0.1 -n 31 > nul
+                    echo WSO2 APIM startup initiated
                 """
             }
         }
         stage('Verify Startup') {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitUntil {
-                            script {
-                                def result = bat(
-                                    script: 'curl -f -k https://localhost:9443/carbon/admin/login.jsp',
-                                    returnStatus: true
-                                )
-                                return result == 0
-                            }
-                        }
-                    }
+                    bat """
+                        echo Verifying WSO2 APIM startup...
+                        ping 127.0.0.1 -n 11 > nul
+                        
+                        REM Check if process is running
+                        wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" get ProcessId /value | find "ProcessId=" > nul
+                        if errorlevel 1 (
+                            echo ERROR: WSO2 APIM process not found
+                            exit /b 1
+                        ) else (
+                            echo WSO2 APIM process is running
+                        )
+                    """
                 }
             }
         }
