@@ -31,29 +31,6 @@ pipeline {
                 """
             }
         }
-        stage('Check WSO2 Status') {
-            steps {
-                powershell '''
-                    $maxAttempts = 10
-                    $attempt = 1
-                    while ($attempt -le $maxAttempts) {
-                        try {
-                            $response = Invoke-WebRequest -Uri http://localhost:9443/publisher -UseBasicParsing -TimeoutSec 15
-                            if ($response.StatusCode -eq 200) {
-                                Write-Host "WSO2 APIM is up!"
-                                exit 0
-                            }
-                        } catch {
-                            Write-Host "Waiting for WSO2 to be up... attempt $attempt"
-                        }
-                        Start-Sleep -Seconds 10
-                        $attempt++
-                    }
-                    Write-Host "WSO2 APIM did not respond in time."
-                    exit 1
-                '''
-            }
-        }
     }
 
     post {
