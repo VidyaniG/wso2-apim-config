@@ -22,13 +22,48 @@ pipeline {
             }
         }
 
-        stage('Restart WSO2 APIM') {
+        stage('Stop WSO2 APIM') {
+            steps {
+                script {
+                    bat """
+                        echo "Stopping WSO2 APIM..."
+                        wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" delete
+                        timeout /t 15 /nobreak
+                        
+                        REM Verify process is stopped
+                        for /f %%i in ('wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" get ProcessId /value 2^>nul ^| find "ProcessId"') do (
+                            echo "Process still running, force killing..."
+                            taskkill /F /PID %%i 2>nul
+                        )
+                    """
+                }
+            }
+        }
+        stage('Start WSO2 APIM') {
             steps {
                 bat """
-                    for /f "tokens=2 delims=," %%a in ('tasklist /v /fo csv ^| findstr /i "org.wso2.carbon.bootstrap.Bootstrap"') do taskkill /PID %%a /F
-                    ping 127.0.0.1 -n 6 > nul
-                    start "" "%APIM_HOME%\\bin\\api-manager.bat"
+                    echo "Starting WSO2 APIM..."
+                    cd /d "%APIM_HOME%\\bin"
+                    start "WSO2 APIM" /MIN api-manager.bat
+                    timeout /t 30 /nobreak
                 """
+            }
+        }
+        stage('Verify Startup') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitUntil {
+                            script {
+                                def result = bat(
+                                    script: 'curl -f -k https://localhost:9443/carbon/admin/login.jsp',
+                                    returnStatus: true
+                                )
+                                return result == 0
+                            }
+                        }
+                    }
+                }
             }
         }
     }
