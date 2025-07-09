@@ -4,6 +4,7 @@ pipeline {
     environment {
         APIM_HOME = "C:\\Users\\DELL\\Downloads\\wso2am-4.1.0(2)\\wso2am-4.1.0"
         DEPLOYMENT_FILE_PATH = "${APIM_HOME}\\repository\\conf\\deployment.toml"
+        SERVER_IP = "192.168.56.1"
     }
 
     stages {
