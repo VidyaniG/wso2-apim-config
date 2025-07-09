@@ -34,33 +34,29 @@ pipeline {
                 }
             }
         }
-        stage('Start WSO2 APIM') {
+        stage('Restart WSO2 APIM') {
             steps {
                 bat """
-                    echo Starting WSO2 APIM...
-                    cd /d "%APIM_HOME%\\bin"
-                    start "WSO2 APIM" /MIN api-manager.bat
-                    ping 127.0.0.1 -n 31 > nul
-                    echo WSO2 APIM startup initiated
+                    nssm stop wso2-apim
+                    timeout /t 10
+                    nssm start wso2-apim
                 """
             }
         }
         stage('Verify Startup') {
             steps {
                 script {
-                    bat """
-                        echo Verifying WSO2 APIM startup...
-                        ping 127.0.0.1 -n 11 > nul
-                        
-                        REM Check if process is running
-                        wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" get ProcessId /value | find "ProcessId=" > nul
-                        if errorlevel 1 (
-                            echo ERROR: WSO2 APIM process not found
-                            exit /b 1
-                        ) else (
-                            echo WSO2 APIM process is running
-                        )
-                    """
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitUntil {
+                            script {
+                                def result = bat(
+                                    script: 'curl -f -k https://localhost:9443/carbon/admin/login.jsp',
+                                    returnStatus: true
+                                )
+                                return result == 0
+                            }
+                        }
+                    }
                 }
             }
         }
