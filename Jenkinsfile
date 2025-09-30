@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APIM_HOME = "C:\\Users\\DELL\\Downloads\\wso2am-4.1.0(2)\\wso2am-4.1.0"
+        APIM_HOME = "D:\\C_DRIVE\\Downloads\\wso2am-4.1.0_new\\wso2am-4.1.0"
         DEPLOYMENT_FILE_PATH = "${APIM_HOME}\\repository\\conf\\deployment.toml"
         SERVER_IP = "192.168.56.1"
         NSSM_EXE = "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe"
