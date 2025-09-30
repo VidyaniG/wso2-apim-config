@@ -5,6 +5,8 @@ pipeline {
         APIM_HOME = "C:\\Users\\DELL\\Downloads\\wso2am-4.1.0(2)\\wso2am-4.1.0"
         DEPLOYMENT_FILE_PATH = "${APIM_HOME}\\repository\\conf\\deployment.toml"
         SERVER_IP = "192.168.56.1"
+        NSSM_EXE = "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe"
+        LOG_FILE = "${APIM_HOME}\\repository\\logs\\wso2carbon.log"
     }
 
     stages {
@@ -27,8 +29,8 @@ pipeline {
                 script {
                     bat """
                         echo Stopping WSO2 APIM...
-                        wmic process where "CommandLine like '%%org.wso2.carbon.bootstrap.Bootstrap%%'" delete
-                        ping 127.0.0.1 -n 16 > nul
+                        "%NSSM_EXE%" stop wso2-apim
+                        ping 127.0.0.1 -n 20 > nul
                         echo Process stopped successfully
                     """
                 }
@@ -37,23 +39,35 @@ pipeline {
         stage('Restart WSO2 APIM') {
             steps {
                 bat """
-                    "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe" stop wso2-apim
-                    timeout /t 10 /nobreak
-                    "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe" start wso2-apim
+                    echo Starting WSO2 APIM...
+                    "%NSSM_EXE%" start wso2-apim
                 """
             }
         }
         stage('Verify Startup') {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitUntil {
-                            script {
-                                def result = bat(
-                                    script: 'curl -f -k https://localhost:9443/carbon/admin/login.jsp',
-                                    returnStatus: true
-                                )
-                                return result == 0
+                    timeout(time: 7, unit: 'MINUTES') {
+                        retry(30) {
+                            sleep(time: 10, unit: 'SECONDS')
+
+                            // Check if log contains "Mgt Console URL"
+                            def logCheck = bat(
+                                script: "findstr /C:\"Mgt Console URL\" \"%LOG_FILE%\"",
+                                returnStatus: true
+                            )
+
+                            if (logCheck != 0) {
+                                error "APIM not ready yet, retrying..."
+                            }
+
+                            // Final curl check
+                            def result = bat(
+                                script: "curl -f -k https://localhost:9443/carbon/admin/login.jsp",
+                                returnStatus: true
+                            )
+                            if (result != 0) {
+                                error "Carbon console not reachable yet, retrying..."
                             }
                         }
                     }
