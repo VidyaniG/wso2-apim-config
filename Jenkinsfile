@@ -28,15 +28,16 @@ pipeline {
             steps {
                 script {
                     echo "Attempting to stop WSO2 APIM service: ${env.SERVICE_NAME}"
-                    // 1. Stop the service using NSSM. This command blocks until the service has stopped or timed out.
+                    // 1. Stop the service using NSSM.
                     bat "\"${env.NSSM_PATH}\" stop ${env.SERVICE_NAME}"
                     echo "Service stop command executed. Waiting for a moment before starting..."
                     
-                    // Add a brief, yet safe, delay after stop to ensure the port is released
-                    bat 'timeout /t 10 /nobreak'
+                    // FIX: Use ping for a reliable 10-second pause
+                    // -n 11 means 10 intervals of 1 second (11 pings with a 1s delay between them)
+                    bat 'ping 127.0.0.1 -n 11 > nul' 
                     
                     echo "Attempting to start WSO2 APIM service: ${env.SERVICE_NAME}"
-                    // 2. Start the service using NSSM. This command is usually non-blocking.
+                    // 2. Start the service using NSSM.
                     bat "\"${env.NSSM_PATH}\" start ${env.SERVICE_NAME}"
                     echo "Service start command executed."
                 }
