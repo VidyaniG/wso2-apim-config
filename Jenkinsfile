@@ -37,9 +37,9 @@ pipeline {
         stage('Restart WSO2 APIM') {
             steps {
                 bat """
-                    "C:\\Users\\DELL\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win32\\nssm.exe" stop wso2-apim
+                    "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe" stop wso2-apim
                     timeout /t 10 /nobreak
-                    "C:\\Users\\DELL\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win32\\nssm.exe" start wso2-apim
+                    "D:\\C_DRIVE\\Downloads\\nssm-2.24-101-g897c7ad\\nssm-2.24-101-g897c7ad\\win64\\nssm.exe" start wso2-apim
                 """
             }
         }
